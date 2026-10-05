@@ -1,0 +1,113 @@
+skill,category
+Python,Programming Languages
+Java,Programming Languages
+C++,Programming Languages
+C#,Programming Languages
+C,Programming Languages
+JavaScript,Programming Languages
+TypeScript,Programming Languages
+Ruby,Programming Languages
+Go,Programming Languages
+Rust,Programming Languages
+PHP,Programming Languages
+Swift,Programming Languages
+Kotlin,Programming Languages
+R,Programming Languages
+Scala,Programming Languages
+HTML,Web Development
+CSS,Web Development
+React,Web Development
+Angular,Web Development
+Vue.js,Web Development
+Node.js,Web Development
+Express.js,Web Development
+Django,Web Development
+Flask,Web Development
+FastAPI,Web Development
+Spring Boot,Web Development
+ASP.NET,Web Development
+Next.js,Web Development
+Tailwind CSS,Web Development
+Bootstrap,Web Development
+jQuery,Web Development
+GraphQL,Web Development
+REST API,Web Development
+SQL,Databases
+MySQL,Databases
+PostgreSQL,Databases
+MongoDB,Databases
+Redis,Databases
+Oracle,Databases
+SQLite,Databases
+Cassandra,Databases
+DynamoDB,Databases
+MariaDB,Databases
+Firebase,Databases
+Elasticsearch,Databases
+Machine Learning,Machine Learning & AI
+Deep Learning,Machine Learning & AI
+NLP,Machine Learning & AI
+Natural Language Processing,Machine Learning & AI
+Computer Vision,Machine Learning & AI
+Scikit-learn,Machine Learning & AI
+TensorFlow,Machine Learning & AI
+PyTorch,Machine Learning & AI
+Keras,Machine Learning & AI
+OpenCV,Machine Learning & AI
+Hugging Face,Machine Learning & AI
+LLM,Machine Learning & AI
+Generative AI,Machine Learning & AI
+XGBoost,Machine Learning & AI
+LightGBM,Machine Learning & AI
+Random Forest,Machine Learning & AI
+Regression,Machine Learning & AI
+Classification,Machine Learning & AI
+Clustering,Machine Learning & AI
+Pandas,Data Science & Analytics
+NumPy,Data Science & Analytics
+Matplotlib,Data Science & Analytics
+Seaborn,Data Science & Analytics
+Plotly,Data Science & Analytics
+Tableau,Data Science & Analytics
+Power BI,Data Science & Analytics
+Excel,Data Science & Analytics
+Data Analysis,Data Science & Analytics
+Data Visualization,Data Science & Analytics
+Data Mining,Data Science & Analytics
+Statistics,Data Science & Analytics
+Apache Spark,Data Science & Analytics
+PySpark,Data Science & Analytics
+Hadoop,Data Science & Analytics
+AWS,Cloud & DevOps
+Azure,Cloud & DevOps
+Google Cloud,Cloud & DevOps
+Docker,Cloud & DevOps
+Kubernetes,Cloud & DevOps
+CI/CD,Cloud & DevOps
+Git,Cloud & DevOps
+GitHub,Cloud & DevOps
+GitLab,Cloud & DevOps
+Jenkins,Cloud & DevOps
+Linux,Cloud & DevOps
+Terraform,Cloud & DevOps
+Ansible,Cloud & DevOps
+Nginx,Cloud & DevOps
+Microservices,Cloud & DevOps
+Postman,Tools & Frameworks
+JIRA,Tools & Frameworks
+Agile,Tools & Frameworks
+Scrum,Tools & Frameworks
+VS Code,Tools & Frameworks
+Figma,Tools & Frameworks
+Jupyter,Tools & Frameworks
+Selenium,Tools & Frameworks
+PyTest,Tools & Frameworks
+Unit Testing,Tools & Frameworks
+Problem Solving,Soft Skills
+Communication,Soft Skills
+Teamwork,Soft Skills
+Leadership,Soft Skills
+Critical Thinking,Soft Skills
+Time Management,Soft Skills
+Adaptability,Soft Skills
+Collaboration,Soft Skills

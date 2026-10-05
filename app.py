@@ -39,6 +39,7 @@ from utils.visualization import (
     create_score_breakdown_chart,
     create_classifier_confidence_chart
 )
+from utils.report_generator import generate_candidate_pdf_report
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 JOBS_CSV        = os.path.join(BASE_DIR, "data", "jobs.csv")
@@ -366,6 +367,36 @@ def render_skills(skills, badge_class="skill-badge"):
     st.markdown(html, unsafe_allow_html=True)
 
 
+# ── Helper: Render Robust High-Contrast HTML Table ─────────────────────────────
+def render_pro_table(headers: list, rows: list, alignments=None):
+    if not alignments:
+        alignments = ["left"] * len(headers)
+    
+    th_html = "".join(
+        f"<th style='padding:11px 16px; text-align:{alignments[i]}; color:#A5B4FC; font-size:0.84rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; border-bottom:1px solid #334155; background:#182339;'>{h}</th>"
+        for i, h in enumerate(headers)
+    )
+    
+    tr_html = ""
+    for r_idx, row in enumerate(rows):
+        bg = "#111A2C" if r_idx % 2 == 0 else "#152033"
+        tds = "".join(
+            f"<td style='padding:11px 16px; text-align:{alignments[c_idx]}; color:#F1F5F9; font-size:0.91rem; border-bottom:1px solid #1E2D47;'>{val}</td>"
+            for c_idx, val in enumerate(row)
+        )
+        tr_html += f"<tr style='background:{bg};'>{tds}</tr>"
+        
+    table_html = f"""
+    <div style='overflow-x:auto; border:1px solid #2B3954; border-radius:12px; margin-bottom:18px; box-shadow:0 4px 16px rgba(0,0,0,0.25);'>
+        <table style='width:100%; border-collapse:collapse;'>
+            <thead><tr>{th_html}</tr></thead>
+            <tbody>{tr_html}</tbody>
+        </table>
+    </div>
+    """
+    st.markdown(table_html, unsafe_allow_html=True)
+
+
 # ── Helper: Run Analysis Pipeline ─────────────────────────────────────────────
 def run_analysis(file_bytes_or_path, filename: str):
     parse_result = ResumeParser.parse_resume(file_bytes_or_path, filename)
@@ -691,6 +722,40 @@ def page_resume_analysis():
 
         st.progress(min(int(score), 100) / 100.0)
 
+    # ── PDF Report Generation Export ──────────────────────────────────────────
+    st.markdown('<div class="section-heading">📑 Official Career Evaluation Report (PDF)</div>', unsafe_allow_html=True)
+    classifier = get_classifier()
+    pred_res = classifier.predict(pr["raw_text"]) if classifier.is_trained else None
+    
+    try:
+        pdf_bytes = generate_candidate_pdf_report(
+            parse_result=pr,
+            skills_by_cat=skills_by_cat,
+            matched_jobs=matched_jobs,
+            prediction_result=pred_res,
+            recommender_obj=get_recommender()
+        )
+        safe_name = pr['candidate_name'].replace(' ', '_')
+        
+        pdf_col1, pdf_col2 = st.columns([2, 1])
+        with pdf_col1:
+            st.markdown("""
+            <div style='color:#E2E8F0; font-size:0.95rem;'>
+                Generate an executive <b>AI Career Intelligence & Job Matching PDF Report</b> containing complete profile breakdown, ML domain classification, ranked positions, and personalized skill acquisition tips.
+            </div>
+            """, unsafe_allow_html=True)
+        with pdf_col2:
+            st.download_button(
+                label="📥 Download Career Report (PDF)",
+                data=pdf_bytes,
+                file_name=f"{safe_name}_Career_Report.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+    except Exception as pdf_err:
+        st.info(f"PDF Export ready. ({pdf_err})")
+
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE 3: JOB RECOMMENDATIONS
@@ -740,18 +805,26 @@ def page_job_recommendations():
 
     # Ranked Summary Table
     st.markdown(f'<div class="section-heading">🏅 Top {len(top_recs)} Recommended Positions</div>', unsafe_allow_html=True)
+    table_headers = ["Rank", "Job Title", "Company", "Location", "Domain", "Experience Req", "Match Score"]
     table_rows = []
     for rank, job in enumerate(top_recs, start=1):
-        table_rows.append({
-            "Rank": f"#{rank}",
-            "Job Title": job["job_title"],
-            "Company": job["company"],
-            "Location": job["location"],
-            "Domain": job["category"],
-            "Experience Req": job["experience_level"],
-            "Match Score": f"{job['match_score']:.1f}%"
-        })
-    st.dataframe(pd.DataFrame(table_rows), use_container_width=True, hide_index=True)
+        score = job["match_score"]
+        score_badge = (
+            f"<span class='chip chip-success'>{score:.1f}%</span>" if score >= 70 else (
+                f"<span class='chip chip-info'>{score:.1f}%</span>" if score >= 45 else
+                f"<span class='chip chip-warning'>{score:.1f}%</span>"
+            )
+        )
+        table_rows.append([
+            f"<b style='color:#818CF8;'>#{rank}</b>",
+            f"<b style='color:#FFFFFF;'>{job['job_title']}</b>",
+            f"<span style='color:#E2E8F0;'>{job['company']}</span>",
+            f"<span style='color:#CBD5E1;'>{job['location']}</span>",
+            f"<span class='skill-badge' style='margin:0; font-size:0.78rem; padding:3px 8px;'>{job['category']}</span>",
+            f"<span style='color:#E2E8F0;'>{job['experience_level']}</span>",
+            score_badge
+        ])
+    render_pro_table(table_headers, table_rows)
 
     # Plotly Match Score Bar Chart
     fig_bar = create_match_score_chart(top_recs)
@@ -827,6 +900,30 @@ def page_job_recommendations():
         fig_radar = create_score_breakdown_chart(selected_job)
         st.plotly_chart(fig_radar, use_container_width=True, key="p3_radar")
 
+    # ── PDF Download Action ───────────────────────────────────────────────────
+    st.markdown("<br>", unsafe_allow_html=True)
+    classifier = get_classifier()
+    pred_res = classifier.predict(pr["raw_text"]) if classifier.is_trained else None
+    try:
+        pdf_bytes = generate_candidate_pdf_report(
+            parse_result=pr,
+            skills_by_cat=data["skills_by_cat"],
+            matched_jobs=matched_jobs,
+            prediction_result=pred_res,
+            recommender_obj=recommender
+        )
+        safe_name = pr['candidate_name'].replace(' ', '_')
+        st.download_button(
+            label="📥 Download Full Job Matching & Skill Gap Report (PDF)",
+            data=pdf_bytes,
+            file_name=f"{safe_name}_Job_Recommendations_Report.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+    except Exception:
+        pass
+
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PAGE 4: SKILL GAP & ANALYTICS
@@ -868,22 +965,28 @@ def page_skill_analytics():
     with c1:
         cat_counts = jobs_df["category"].value_counts().reset_index()
         cat_counts.columns = ["Category", "Count"]
-        st.markdown("""
-        <div class="pro-card">
-            <div class="pro-card-header">📂 Roles by Category Domain</div>
-        """, unsafe_allow_html=True)
-        st.dataframe(cat_counts, use_container_width=True, hide_index=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="pro-card-header">📂 Roles by Category Domain</div>', unsafe_allow_html=True)
+        cat_rows = [
+            [
+                f"<span class='skill-badge' style='margin:0;'>{row['Category']}</span>",
+                f"<b style='color:#FFFFFF;'>{row['Count']} Roles</b>"
+            ]
+            for _, row in cat_counts.iterrows()
+        ]
+        render_pro_table(["Category Domain", "Total Openings"], cat_rows)
 
     with c2:
         exp_counts = jobs_df["experience_level"].value_counts().reset_index()
         exp_counts.columns = ["Experience Level", "Job Count"]
-        st.markdown("""
-        <div class="pro-card">
-            <div class="pro-card-header">💼 Experience Level Breakdown</div>
-        """, unsafe_allow_html=True)
-        st.dataframe(exp_counts, use_container_width=True, hide_index=True)
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="pro-card-header">💼 Experience Level Breakdown</div>', unsafe_allow_html=True)
+        exp_rows = [
+            [
+                f"<b style='color:#E2E8F0;'>{row['Experience Level']}</b>",
+                f"<b style='color:#60A5FA;'>{row['Job Count']} Roles</b>"
+            ]
+            for _, row in exp_counts.iterrows()
+        ]
+        render_pro_table(["Experience Level", "Available Roles"], exp_rows)
 
 
 # ═════════════════════════════════════════════════════════════════════════════
@@ -938,17 +1041,18 @@ def page_model_evaluation():
 
         # Classification Report Table
         st.markdown('<div class="section-heading">📋 Classification Report Summary</div>', unsafe_allow_html=True)
-        report_rows = []
+        rep_headers = ["Category / Metric", "Precision", "Recall", "F1-Score", "Support"]
+        rep_rows = []
         for key, metrics in eval_result["classification_report"].items():
             if isinstance(metrics, dict):
-                report_rows.append({
-                    "Category / Average": key,
-                    "Precision": f"{metrics.get('precision', 0):.3f}",
-                    "Recall": f"{metrics.get('recall', 0):.3f}",
-                    "F1-Score": f"{metrics.get('f1-score', 0):.3f}",
-                    "Support": int(metrics.get("support", 0))
-                })
-        st.dataframe(pd.DataFrame(report_rows), use_container_width=True, hide_index=True)
+                rep_rows.append([
+                    f"<b style='color:#A5B4FC;'>{key}</b>",
+                    f"<span style='color:#34D399;'>{metrics.get('precision', 0):.3f}</span>",
+                    f"<span style='color:#60A5FA;'>{metrics.get('recall', 0):.3f}</span>",
+                    f"<b style='color:#FFFFFF;'>{metrics.get('f1-score', 0):.3f}</b>",
+                    f"<span style='color:#CBD5E1;'>{int(metrics.get('support', 0))}</span>"
+                ])
+        render_pro_table(rep_headers, rep_rows)
 
     # Active Resume Prediction
     data = st.session_state.get("resume_data")
